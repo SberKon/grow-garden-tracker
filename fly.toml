@@ -1,6 +1,0 @@
-# у корені репо поруч із Dockerfile
-app = "grow-garden-tracker"
-
-[build]
-  # вкажіть, що брати Dockerfile із кореня
-  dockerfile = "Dockerfile"
