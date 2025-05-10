@@ -2,6 +2,7 @@ import json
 import asyncio
 import aiohttp
 import logging
+import os
 from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes
@@ -21,8 +22,10 @@ class GardenBot:
     def __init__(self):
         self.last_stock = None
         self.users = self.load_users()
-        self.admin_id = "YOUR_ADMIN_ID"  # Ваш ID
-        self.notification_messages = {}  # Зберігаємо ID повідомлень для кожного користувача
+        self.admin_id = os.environ.get('ADMIN_ID')  # Get admin ID from environment
+        if not self.admin_id:
+            logging.warning("ADMIN_ID environment variable is not set")
+        self.notification_messages = {}
 
     def load_users(self):
         try:
@@ -380,7 +383,11 @@ class GardenBot:
 
 def main():
     bot = GardenBot()
-    application = Application.builder().token("YOUR_TELEGRAM_BOT_TOKEN").build()
+    token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    if not token:
+        raise ValueError("TELEGRAM_BOT_TOKEN environment variable is not set")
+    
+    application = Application.builder().token(token).build()
 
     application.add_handler(CommandHandler("start", bot.start))
     application.add_handler(CommandHandler("menu", bot.menu))

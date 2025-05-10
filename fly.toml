@@ -1,0 +1,18 @@
+app = "garden-bot-tracker"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  API_URL = "https://stock-tracker-iota-steel.vercel.app/api/garden"
+
+[[services]]
+  internal_port = 8080
+  processes = ["app"]
+
+  [[services.ports]]
+    handlers = ["http"]
+    port = 80
+
+[processes]
+  app = "python src/bot.py"
