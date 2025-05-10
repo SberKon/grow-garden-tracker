@@ -1,8 +1,0 @@
-app = "grow-garden-tracker"           # ім’я вашого додатку (повинно співпадати з тим, що в Dashboard)
-primary_region = "fra"       # або інший регіон, який обрали
-
-[build]
-  dockerfile = "Dockerfile"
-
-[env]
-  TELEGRAM_TOKEN = ""        # залиште порожнім — на Fly ви підʼєднаєте секрет окремо
