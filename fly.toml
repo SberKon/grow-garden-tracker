@@ -1,6 +1,6 @@
 Sure, here's the contents for the file: /garden-bot/garden-bot/fly.toml
 
-app = "garden-bot"
+app = "garden-bot-tracker"
 
 [build]
   dockerfile = "Dockerfile"
