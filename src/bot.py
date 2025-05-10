@@ -72,12 +72,8 @@ class GardenBot:
         current_minute = datetime.now().minute
         is_update_time = current_minute % 5 == 0 or current_minute % 30 == 0
         
-        # Використовуємо різні заголовки залежно від наявності попередження
         if is_update_time:
-            text += "━━━━━━━━ STOCK ━━━━━━━━\n\n"
-            text += "⚠️ WARNING: Stock data might be outdated!\n"
-        else:
-            text += "━━━━━━ STOCK ━━━━━━\n\n"
+            text += "⚠️ WARNING: Stock data might be outdated!\n\n"
         
         text += f"Current Stock (from {timestamp}):\n\n"
         for section in stock_data['data']:
@@ -166,7 +162,7 @@ class GardenBot:
             if self.last_stock:
                 text, markup = self.create_stock_view(self.last_stock)
                 await query.edit_message_text(
-                    "━━━━━ STOCK ━━━━━\n\n" + text,
+                    "━━━━━━ STOCK ━━━━━━\n\n" + text,
                     reply_markup=markup
                 )
             else:
@@ -177,7 +173,7 @@ class GardenBot:
 
         elif query.data == "config_tracking":
             await query.edit_message_text(
-                "━━━━━━  TRAKING SETTINGS  ━━━━━━\n\n"
+                "━━━━  TRAKING SETTINGS  ━━━━\n\n"
                 "Choose your items:",
                 reply_markup=self.create_tracking_menu("SEEDS")
             )
@@ -185,7 +181,7 @@ class GardenBot:
         elif query.data.startswith("category_"):
             category = query.data.split("_")[1]
             await query.edit_message_text(
-                "━━━━━━  TRAKING SETTINGS  ━━━━━━\n\n"
+                "━━━━  TRAKING SETTINGS  ━━━━\n\n"
                 "Choose your items:",
                 reply_markup=self.create_tracking_menu(category)
             )
@@ -199,7 +195,7 @@ class GardenBot:
                 user_data['tracked_items'][category].append(item)
             self.save_users()
             await query.edit_message_text(
-                "━━━━━━  TRAKING SETTINGS  ━━━━━━\n\n"
+                "━━━━  TRAKING SETTINGS  ━━━━\n\n"
                 "Choose your items:",
                 reply_markup=self.create_tracking_menu(category)
             )
