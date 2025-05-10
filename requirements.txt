@@ -1,4 +1,2 @@
-aiohttp>=3.8.0
-python-telegram-bot>=20.0
-asyncio
-json
+aiohttp>=3.8.0,<4.0.0
+python-telegram-bot>=20.0,<23.0
