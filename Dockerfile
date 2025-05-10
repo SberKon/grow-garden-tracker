@@ -1,5 +1,3 @@
-Sure, here's the contents for the Dockerfile:
-
 FROM python:3.9-slim
 
 # Set the working directory

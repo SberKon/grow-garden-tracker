@@ -1,12 +1,9 @@
-Sure, here's the contents for the file: /garden-bot/garden-bot/fly.toml
-
 app = "garden-bot-tracker"
 
 [build]
   dockerfile = "Dockerfile"
 
 [env]
-  TELEGRAM_TOKEN = "your_telegram_bot_token"
   API_URL = "https://stock-tracker-iota-steel.vercel.app/api/garden"
 
 [deploy]
