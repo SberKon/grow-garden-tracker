@@ -10,12 +10,26 @@ from telegram.ext import Application, CallbackQueryHandler, CommandHandler, Cont
 # Constants
 API_URL = "https://stock-tracker-iota-steel.vercel.app/api/garden"
 TRACKABLE_ITEMS = {
-    'SEEDS': ['Carrot', 'Strawberry', 'Blueberry', 'Orange Tulip', 'Tomato', 'Corn', 
-              'Daffodil', 'Watermelon', 'Pumpkin', 'Apple', 'Bamboo', 'Coconut', 
-              'Cactus', 'Dragon Fruit', 'Mango', 'Grape', 'Mushroom', 'Pepper'],
-    'GEAR': ['Watering Can', 'Trowel', 'Basic Sprinkler', 'Advanced Sprinkler',
-             'Godly Sprinkler', 'Lightning Rod', 'Master Sprinkler'],
-    'EGG': ['Common Egg', 'Uncommon Egg', 'Rare Egg', 'Legendary Egg', 'Bug Egg']
+    'SEEDS': [
+        'Carrot', 'Strawberry', 'Blueberry', 'Orange Tulip', 'Tomato',
+        'Corn', 'Daffodil', 'Watermelon', 'Pumpkin', 'Apple', 'Bamboo',
+        'Coconut', 'Cactus', 'Dragon Fruit', 'Mango', 'Grape', 'Mushroom', 'Pepper', 'Cacao'
+    ],
+    'GEAR': [
+        'Watering Can', 'Trowel', 'Recall Wrench', 'Basic Sprinkler', 'Advanced Sprinkler',
+        'Godly Sprinkler', 'Lightning Rod', 'Master Sprinkler', 'Favorite Tool'
+    ],
+    'EGG': [
+        'Common Egg', 'Uncommon Egg', 'Rare Egg', 'Legendary Egg', 'Bug Egg'
+    ],
+    'WEATHER': ['Night', '⚠️ Rain', '⚠️ Thunderstorm', '⚠️ Snow']  # Weather category
+}
+
+WEATHER_EMOJIS = {
+    'Night': '🌙',
+    'Rain': '🌧️',
+    'Thunderstorm': '⛈️',
+    'Snow': '❄️'
 }
 
 class GardenBot:
@@ -25,7 +39,10 @@ class GardenBot:
         self.admin_id = os.environ.get('ADMIN_ID')  # Get admin ID from environment
         if not self.admin_id:
             logging.warning("ADMIN_ID environment variable is not set")
-        self.notification_messages = {}
+        self.notification_messages = {}  # Store message IDs for each user
+        for user_id in self.users:
+            if user_id not in self.notification_messages:
+                self.notification_messages[user_id] = {'seeds_gear': [], 'egg': [], 'weather': []}
 
     def load_users(self):
         try:
@@ -41,10 +58,20 @@ class GardenBot:
     def get_user_data(self, user_id):
         str_id = str(user_id)
         if str_id not in self.users:
+            # Add WEATHER to initial user structure
             self.users[str_id] = {
                 'tracking_enabled': True,
-                'tracked_items': {category: [] for category in TRACKABLE_ITEMS}
+                'tracked_items': {
+                    'SEEDS': [],
+                    'GEAR': [],
+                    'EGG': [],
+                    'WEATHER': []
+                }
             }
+            self.save_users()
+        # Check for WEATHER presence in existing users
+        elif 'WEATHER' not in self.users[str_id]['tracked_items']:
+            self.users[str_id]['tracked_items']['WEATHER'] = []
             self.save_users()
         return self.users[str_id]
 
@@ -89,36 +116,63 @@ class GardenBot:
     def create_tracking_menu(self, category):
         user_data = self.get_user_data(self.current_user_id)
         keyboard = []
-        current_row = []
-        
-        # Add items in rows of 2
-        for item in TRACKABLE_ITEMS[category]:
-            status = "✅" if item in user_data['tracked_items'][category] else "❌"
-            current_row.append(InlineKeyboardButton(
-                f"{status} {item}",
-                callback_data=f"track_{category}_{item}"
-            ))
+
+        if category == 'WEATHER':
+            # Weather tracking menu
+            current_row = []
+            for item in TRACKABLE_ITEMS['WEATHER']:
+                if '⚠️' in item or item == 'Night':
+                    current_row.append(InlineKeyboardButton(
+                        item if '⚠️' in item else f"{'✅' if item in user_data['tracked_items']['WEATHER'] else '❌'} {item}",
+                        callback_data=f"track_WEATHER_{item}" if item == 'Night' else "none"
+                    ))
+                
+                if len(current_row) == 2:
+                    keyboard.append(current_row)
+                    current_row = []
             
-            if len(current_row) == 2:  # When row has 2 items
+            if current_row:
                 keyboard.append(current_row)
-                current_row = []
-        
-        # Add remaining items if any
-        if current_row:
-            keyboard.append(current_row)
-        
-        # Add category navigation row with ←→ arrows
-        categories = list(TRACKABLE_ITEMS.keys())
-        current_idx = categories.index(category)
-        prev_category = categories[(current_idx - 1) % len(categories)]
-        next_category = categories[(current_idx + 1) % len(categories)]
-        
-        keyboard.append([ 
-            InlineKeyboardButton("←", callback_data=f"category_{prev_category}"),
-            InlineKeyboardButton(f"{category}", callback_data="none"),
-            InlineKeyboardButton("→", callback_data=f"category_{next_category}")
-        ])
-        
+
+            # Add category navigation
+            keyboard.append([
+                InlineKeyboardButton("EGG", callback_data="category_EGG"),
+                InlineKeyboardButton("SEEDS", callback_data="category_SEEDS"),
+                InlineKeyboardButton("GEAR", callback_data="category_GEAR")
+            ])
+        else:
+            # Regular category menu (SEEDS/GEAR/EGG)
+            current_row = []
+            for item in TRACKABLE_ITEMS[category]:
+                status = "✅" if item in user_data['tracked_items'][category] else "❌"
+                current_row.append(InlineKeyboardButton(
+                    f"{status} {item}",
+                    callback_data=f"track_{category}_{item}"
+                ))
+                
+                if len(current_row) == 2:  # When row has 2 items
+                    keyboard.append(current_row)
+                    current_row = []
+            
+            # Add remaining items if any
+            if current_row:
+                keyboard.append(current_row)
+            
+            # Add category navigation row with ←→ arrows
+            categories = list(TRACKABLE_ITEMS.keys())
+            current_idx = categories.index(category)
+            prev_category = categories[(current_idx - 1) % len(categories)]
+            next_category = categories[(current_idx + 1) % len(categories)]
+            
+            keyboard.append([ 
+                InlineKeyboardButton("←", callback_data=f"category_{prev_category}"),
+                InlineKeyboardButton(f"{category}", callback_data="none"),
+                InlineKeyboardButton("→", callback_data=f"category_{next_category}")
+            ])
+
+            # Add WEATHER button
+            keyboard.append([InlineKeyboardButton("WEATHER", callback_data="category_WEATHER")])
+
         keyboard.append([InlineKeyboardButton("« Back", callback_data="main_menu")])
         return InlineKeyboardMarkup(keyboard)
 
@@ -295,7 +349,10 @@ class GardenBot:
             return
 
         current_minute = update_time.minute
+        current_hour = update_time.hour
         is_egg_update = current_minute in [0, 30]  # Перевіряємо чи це точний час для EGG
+        is_night_warning = current_minute == 55
+        is_night_start = current_minute == 0
 
         # Для кожного користувача
         for user_id, user_data in self.users.items():
@@ -326,7 +383,7 @@ class GardenBot:
 
             # Ініціалізуємо структуру для нових повідомлень
             if str_user_id not in self.notification_messages:
-                self.notification_messages[str_user_id] = {'seeds_gear': [], 'egg': []}
+                self.notification_messages[str_user_id] = {'seeds_gear': [], 'egg': [], 'weather': []}
 
             # Відправляємо нові повідомлення
             for section in new_stock['data']:
@@ -356,6 +413,39 @@ class GardenBot:
                             await asyncio.sleep(0.1)  # Зменшена затримка
                         except Exception as e:
                             logging.error(f"Failed to send notification: {e}")
+
+            # Handle Night event
+            tracked_weather = user_data['tracked_items'].get('WEATHER', [])
+            if 'Night' in tracked_weather:
+                if is_night_warning:
+                    try:
+                        message = await context.bot.send_message(
+                            chat_id=user_id,
+                            parse_mode='HTML',
+                            text=f"🌙 <b>Night</b> event starts in 5 minutes!"
+                        )
+                        self.notification_messages[str_user_id]['weather'].append(message.message_id)
+                    except Exception as e:
+                        logging.error(f"Failed to send night warning: {e}")
+                
+                elif is_night_start:
+                    # Clear old weather messages
+                    for msg_id in self.notification_messages[str_user_id]['weather']:
+                        try:
+                            await context.bot.delete_message(chat_id=user_id, message_id=msg_id)
+                        except Exception:
+                            pass
+                    self.notification_messages[str_user_id]['weather'] = []
+                    
+                    try:
+                        message = await context.bot.send_message(
+                            chat_id=user_id,
+                            parse_mode='HTML',
+                            text=f"🌙 Event <b>Night</b> started!"
+                        )
+                        self.notification_messages[str_user_id]['weather'].append(message.message_id)
+                    except Exception as e:
+                        logging.error(f"Failed to send night start: {e}")
 
     async def force_save_stock(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Admin command to force save current stock"""
