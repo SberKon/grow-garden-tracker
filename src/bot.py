@@ -116,7 +116,7 @@ class GardenBot:
     def create_tracking_menu(self, category):
         user_data = self.get_user_data(self.current_user_id)
         keyboard = []
-
+        
         if category == 'WEATHER':
             # Weather tracking menu
             current_row = []
@@ -150,26 +150,25 @@ class GardenBot:
                     callback_data=f"track_{category}_{item}"
                 ))
                 
-                if len(current_row) == 2:  # When row has 2 items
+                if len(current_row) == 2:
                     keyboard.append(current_row)
                     current_row = []
             
-            # Add remaining items if any
             if current_row:
                 keyboard.append(current_row)
             
-            # Add category navigation row with ←→ arrows
-            categories = list(TRACKABLE_ITEMS.keys())
-            current_idx = categories.index(category)
-            prev_category = categories[(current_idx - 1) % len(categories)]
-            next_category = categories[(current_idx + 1) % len(categories)]
+            # Modified category navigation - тільки основні категорії
+            main_categories = ['SEEDS', 'GEAR', 'EGG']
+            current_idx = main_categories.index(category)
+            prev_category = main_categories[(current_idx - 1) % len(main_categories)]
+            next_category = main_categories[(current_idx + 1) % len(main_categories)]
             
-            keyboard.append([ 
+            keyboard.append([
                 InlineKeyboardButton("←", callback_data=f"category_{prev_category}"),
                 InlineKeyboardButton(f"{category}", callback_data="none"),
                 InlineKeyboardButton("→", callback_data=f"category_{next_category}")
             ])
-
+            
             # Add WEATHER button
             keyboard.append([InlineKeyboardButton("WEATHER", callback_data="category_WEATHER")])
 
